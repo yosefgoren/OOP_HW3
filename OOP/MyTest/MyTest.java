@@ -14,7 +14,7 @@ public class MyTest {
         for(Annotation[] param : params_anos) {
             for (Annotation ano : param)
             {
-                System.out.println(ano.getClass().getSimpleName());
+                System.out.println(ano.annotationType());
             }
         }
     }
