@@ -1,4 +1,4 @@
 package OOP.Solution;
 
-public class Inject {
+public @interface Inject {
 }
