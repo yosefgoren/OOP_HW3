@@ -1,5 +1,6 @@
 package OOP.Solution;
 
+import OOP.Provided.IllegalBindException;
 import OOP.Provided.MultipleAnnotationOnParameterException;
 import OOP.Provided.MultipleInjectConstructorsException;
 import OOP.Provided.NoConstructorFoundException;
@@ -10,6 +11,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 public class Injector {
@@ -18,6 +20,42 @@ public class Injector {
         this.class_bindings = new HashMap<>();
     }
 
+
+                     /******* Bindings ******/
+    public void bind(Class clazz1 , Class clazz2) throws IllegalBindException{
+
+        if(!clazz1.isAssignableFrom(clazz2)) throw new IllegalBindException();
+
+       class_bindings.put(clazz1, new InstanceClassType(this,clazz2));
+
+    }
+
+    public void bindToInstance(Class clazz, Object obj) throws IllegalBindException {
+        if(!clazz.isInstance(obj)) throw new IllegalBindException(); //isInstance also checks if obj is of a subclass
+
+        class_bindings.put(clazz, new InstanceObjectType(obj));
+
+    }
+
+
+    public void bindToSupplier(Class clazz, Supplier sup){
+
+        class_bindings.put(clazz, new InstanceSupplierType(sup));
+    }
+
+    public void bindByName(String s,Class clazz){
+        str_bindings.put(s,clazz);
+    }
+
+                 /******* construct ******/
+
+    public Object construct(Class clazz) throws MultipleInjectConstructorsException, NoConstructorFoundException, InvocationTargetException, IllegalAccessException {
+
+        return constructFactory(clazz);
+    }
+
+
+                 /******* Factories ******/
     Object constructFactory(Class<?> reqc) throws MultipleInjectConstructorsException, NoConstructorFoundException, InvocationTargetException, IllegalAccessException {
         if(class_bindings.containsKey(reqc)) {
             return class_bindings.get(reqc).getObject();
