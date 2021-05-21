@@ -152,7 +152,28 @@ public class Injector {
     }
 
     private Object getProvidedParam(Class<?> search_domain, Class<?> search_target, Annotation id_annotation) throws MultipleAnnotationOnParameterException{
-        //TODO: implement this function.
+        Boolean found = false;
+        Class c = search_domain;
+        Method providing_method = null;
+
+       do{
+            Set<Method> provides_anno_methods = Arrays.stream(c.getDeclaredMethods())
+                    .filter(m -> m.isAnnotationPresent(Provides.class)).collect(Collectors.toSet());
+
+           List<Method> matching_methods = provides_anno_methods.stream().filter(method -> method.isAnnotationPresent(id_annotation.getClass())).
+                    filter(method -> (method.getReturnType()==search_target)).collect(Collectors.toList());
+
+           if(matching_methods.size()>1||(matching_methods.size()>0&&found)) throw new MultipleAnnotationOnParameterException();
+           if(matching_methods.size()==1) {
+               providing_method = matching_methods.get(0);
+               found = true;
+           }
+
+
+        } while(c != c.getSuperclass());
+
+        return createFromMethod(providing_method);
+
     }
 
     private Object createFromMethod(Method m){
