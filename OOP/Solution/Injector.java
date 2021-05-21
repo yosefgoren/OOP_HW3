@@ -49,47 +49,57 @@ public class Injector {
 
                  /******* construct ******/
 
-    public Object construct(Class clazz) throws MultipleInjectConstructorsException, NoConstructorFoundException, InvocationTargetException, IllegalAccessException {
+    public Object construct(Class clazz) throws MultipleInjectConstructorsException, NoConstructorFoundException, InvocationTargetException, IllegalAccessException, NoSuitableProviderFoundException, MultipleAnnotationOnParameterException, InstantiationException {
 
         return constructFactory(clazz);
     }
 
 
                  /******* Factories ******/
-    Object constructFactory(Class<?> reqc) throws MultipleInjectConstructorsException, NoConstructorFoundException, InvocationTargetException, IllegalAccessException {
+    Object constructFactory(Class<?> reqc) throws MultipleInjectConstructorsException, NoConstructorFoundException, InvocationTargetException, IllegalAccessException, NoSuitableProviderFoundException, MultipleAnnotationOnParameterException, InstantiationException {
         if(class_bindings.containsKey(reqc)) {
             return class_bindings.get(reqc).getObject();
         }
         else return injectFactory(reqc);
     }
 
-    private Object injectFactory(Class<?> reqc) throws MultipleInjectConstructorsException, NoConstructorFoundException, InvocationTargetException, IllegalAccessException {
+    private Object injectFactory(Class<?> reqc) throws MultipleInjectConstructorsException, NoConstructorFoundException, InvocationTargetException, IllegalAccessException, NoSuitableProviderFoundException, MultipleAnnotationOnParameterException, InstantiationException {
         //1. initialy get the requested object:
         Object reqo;
-        Set<Constructor> inject_anno_ctors = Arrays.stream(reqc.getConstructors())
-                .filter(c -> c.isAnnotationPresent(Inject.class)).collect(Collectors.toSet());
+        List<Constructor> inject_anno_ctors = Arrays.stream(reqc.getDeclaredConstructors())
+                .filter(c -> c.isAnnotationPresent(Inject.class)).collect(Collectors.toList());
         if(inject_anno_ctors.size() > 1){
             throw new MultipleInjectConstructorsException();
         }
         if(inject_anno_ctors.size() == 1){
-            reqo = createFromMethod(inject_anno_ctors.toArray()[0]);
+            Constructor c = inject_anno_ctors.get(0);
+            boolean is_accessible = c.canAccess(this);
+            c.setAccessible(true);
+            reqo = createFromConstructor(c);
+            c.setAccessible(is_accessible);
         }
         else {
+            Constructor default_ctor;
             try {
-                reqo = reqc.getDeclaredConstructor().newInstance();
+                default_ctor = reqc.getDeclaredConstructor();
             } catch (Exception e) {
                 throw new NoConstructorFoundException();
             }
+            boolean is_accessible = default_ctor.canAccess(this);
+            default_ctor.setAccessible(true);
+            reqo = default_ctor.newInstance();;
+            default_ctor.setAccessible(is_accessible);
         }
 
         //2. apply the @inject annotated mathods to the object:
-        Set<Method> inject_anno_methods = Arrays.stream(reqc.getDeclaredMethods())// question (2)
+        Set<Method> inject_anno_methods = Arrays.stream(reqc.getDeclaredMethods())
                 .filter(m -> m.isAnnotationPresent(Inject.class))
                 .collect(Collectors.toSet());
         for(Method m : inject_anno_methods){
-            boolean is_accessible = m.canAccess(this);//?? does this code do what we expect?
+            boolean is_accessible = m.canAccess(this);
             m.setAccessible(true);
-            m.invoke(reqo);
+            Object[] args = evaluateParams(m.getParameterAnnotations(), m.getParameterTypes(), reqo, reqc);
+            m.invoke(reqo, args);
             m.setAccessible(is_accessible);
         }
 
@@ -108,46 +118,41 @@ public class Injector {
         return reqo;
     }
 
-    private Object[] getMethodParameters(Method m) throws MultipleInjectConstructorsException, NoConstructorFoundException, InvocationTargetException, IllegalAccessException, MultipleAnnotationOnParameterException {
-        Annotation[][] annotations = m.getParameterAnnotations();
-        Class<?>[] array_of_args_classes = m.getParameterTypes();
-        Object[] evaluated_args = new Object[m.getParameterCount()];
+    private Object[] evaluateParams(Annotation[][] annotations, Class<?>[] array_of_args_classes, Object obj_domain, Class<?> target_class) throws MultipleInjectConstructorsException, NoConstructorFoundException, InvocationTargetException, IllegalAccessException, MultipleAnnotationOnParameterException, NoSuitableProviderFoundException, InstantiationException {
+        //Annotation[][] annotations = m.getParameterAnnotations();
+        //Class<?>[] array_of_args_classes = m.getParameterTypes();
+        Object[] evaluated_args = new Object[array_of_args_classes.length];
 
-        for(int i = 0; i < m.getParameterCount(); i++){
+        for(int i = 0; i < array_of_args_classes.length; i++){
             Annotation[] annotations_of_arg = annotations[i];
             Class<?> class_of_arg = array_of_args_classes[i];
 
             if(Arrays.stream(annotations_of_arg).map(Annotation::annotationType)
                     .anyMatch(t -> t == Named.class)) {
-                //case 1:
-                //TODO: ask daniel: if there is another annotation with @Named, should we throw?
                 Named named_annotation = (Named) Arrays.stream(annotations_of_arg)
                         .filter(a -> a.annotationType() == Named.class)
                         .collect(Collectors.toList()).get(0);
                 String name = named_annotation.id();
                 if(str_bindings.containsKey(name)){
                     evaluated_args[i] = constructFactory(str_bindings.get(name));
-                } else {
-                    //TODO: what do we do in this case? probably need to throw something.
                 }
-            } else {
-                switch (annotations_of_arg.length) {
-                    case 0:
-                        evaluated_args[i] = constructFactory(array_of_args_classes[i]);
-                        break;
-                    case 1:
-                        evaluated_args[i] = getProvidedParam(m.getReturnType(),
-                                array_of_args_classes[i], annotations_of_arg[0]);
-                        break;
-                    default:
-                        throw new MultipleAnnotationOnParameterException();
-                }
+            }
+            switch (annotations_of_arg.length) {
+                case 0:
+                    evaluated_args[i] = constructFactory(array_of_args_classes[i]);
+                    break;
+                case 1:
+                    evaluated_args[i] = getProvidedParam(target_class,
+                            array_of_args_classes[i], obj_domain, annotations_of_arg[0]);
+                    break;
+                default:
+                    throw new MultipleAnnotationOnParameterException();
             }
         }
         return evaluated_args;
     }
 
-    private Object getProvidedParam(Class<?> search_domain, Class<?> search_target, Annotation id_annotation) throws MultipleAnnotationOnParameterException, MultipleInjectConstructorsException, NoConstructorFoundException, InvocationTargetException, IllegalAccessException, NoSuitableProviderFoundException {
+    private Object getProvidedParam(Class<?> search_domain, Class<?> search_target,Object obj_target, Annotation id_annotation) throws MultipleAnnotationOnParameterException, MultipleInjectConstructorsException, NoConstructorFoundException, InvocationTargetException, IllegalAccessException, NoSuitableProviderFoundException, InstantiationException {
         Class c = search_domain;
         Set<Method> provides_anno_methods = new TreeSet<>();
 
@@ -173,19 +178,21 @@ public class Injector {
                 throw new NoSuitableProviderFoundException();
 
             case 1:
-                return createFromMethod(matching_methods.get(0));
+                return createFromMethod(matching_methods.get(0), obj_target);
 
             default:
                 throw new MultipleAnnotationOnParameterException();
-
-
         }
-
-
     }
 
-    private Object createFromMethod(Method m){
-        //TODO: implement this function.
+    private Object createFromMethod(Method m, Object o) throws MultipleInjectConstructorsException, NoSuitableProviderFoundException, NoConstructorFoundException, InvocationTargetException, MultipleAnnotationOnParameterException, IllegalAccessException, InstantiationException {
+        Object[] args_list = evaluateParams(m.getParameterAnnotations(), m.getParameterTypes(), o, m.getDeclaringClass());
+        return m.invoke(o, args_list);
+    }
+
+    private Object createFromConstructor(Constructor c) throws MultipleInjectConstructorsException, NoSuitableProviderFoundException, NoConstructorFoundException, InvocationTargetException, MultipleAnnotationOnParameterException, IllegalAccessException, InstantiationException {
+        Object[] args_list = evaluateParams(c.getParameterAnnotations(), c.getParameterTypes(), null, c.getDeclaringClass());
+        return c.newInstance(args_list);
     }
 
     private Map<String, Class<?>> str_bindings;
