@@ -1,6 +1,6 @@
 package OOP.Solution;
 
-import OOP.Provided.IllegalBindException;
+import OOP.Provided.*;
 import OOP.Provided.MultipleAnnotationOnParameterException;
 import OOP.Provided.MultipleInjectConstructorsException;
 import OOP.Provided.NoConstructorFoundException;
@@ -147,32 +147,40 @@ public class Injector {
         return evaluated_args;
     }
 
-    private Object getProvidedParam(Class<?> search_domain, Class<?> search_target, Annotation id_annotation) throws MultipleAnnotationOnParameterException, MultipleInjectConstructorsException, NoConstructorFoundException, InvocationTargetException, IllegalAccessException {
-        Boolean found = false;
+    private Object getProvidedParam(Class<?> search_domain, Class<?> search_target, Annotation id_annotation) throws MultipleAnnotationOnParameterException, MultipleInjectConstructorsException, NoConstructorFoundException, InvocationTargetException, IllegalAccessException, NoSuitableProviderFoundException {
         Class c = search_domain;
-        Method providing_method = null;
+        Set<Method> provides_anno_methods = new TreeSet<>();
 
-       do{
-            Set<Method> provides_anno_methods = Arrays.stream(c.getDeclaredMethods())
-                    .filter(m -> m.isAnnotationPresent(Provides.class)).collect(Collectors.toSet());
+        do {
+            provides_anno_methods.addAll(Arrays.stream(c.getDeclaredMethods())
+                    .filter(m -> m.isAnnotationPresent(Provides.class))
+                    .filter(m -> m.isAnnotationPresent(id_annotation.getClass()))
+                    .collect(Collectors.toSet()));
 
-           List<Method> matching_methods = provides_anno_methods.stream()
-                   .filter(method -> method.isAnnotationPresent(id_annotation.getClass()))
-                   .filter(method -> (method.getReturnType()==search_target)).collect(Collectors.toList());
+            c = c.getSuperclass();
+        }while (c!=c.getSuperclass());
 
-           if(matching_methods.size()>1||(matching_methods.size()>0&&found)) throw new MultipleAnnotationOnParameterException();
-           if(matching_methods.size()==1) {
-               providing_method = matching_methods.get(0);
-               found = true;
-           }
+        if(provides_anno_methods.size()==0)
+            return injectFactory(search_target);
+
+        List<Method> matching_methods = provides_anno_methods.stream()
+                .filter(m->m.getReturnType()==search_target)
+                .collect(Collectors.toList());
+
+        switch(matching_methods.size()){
+
+            case 0:
+                throw new NoSuitableProviderFoundException();
+
+            case 1:
+                return createFromMethod(matching_methods.get(0));
+
+            default:
+                throw new MultipleAnnotationOnParameterException();
 
 
-        } while(c != c.getSuperclass());
-       if(found == false){
-           return injectFactory(search_target);
-       }
+        }
 
-        return createFromMethod(providing_method);
 
     }
 
