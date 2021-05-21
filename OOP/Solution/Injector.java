@@ -136,12 +136,8 @@ public class Injector {
                         evaluated_args[i] = constructFactory(array_of_args_classes[i]);
                         break;
                     case 1:
-                        try {
-                            evaluated_args[i] = getProvidedParam(m.getReturnType(),
-                                    array_of_args_classes[i], annotations_of_arg[0]);
-                        } catch (MultipleAnnotationOnParameterException e){
-                            evaluated_args[i] = constructFactory(array_of_args_classes[i]);
-                        }
+                        evaluated_args[i] = getProvidedParam(m.getReturnType(),
+                                array_of_args_classes[i], annotations_of_arg[0]);
                         break;
                     default:
                         throw new MultipleAnnotationOnParameterException();
@@ -151,7 +147,7 @@ public class Injector {
         return evaluated_args;
     }
 
-    private Object getProvidedParam(Class<?> search_domain, Class<?> search_target, Annotation id_annotation) throws MultipleAnnotationOnParameterException{
+    private Object getProvidedParam(Class<?> search_domain, Class<?> search_target, Annotation id_annotation) throws MultipleAnnotationOnParameterException, MultipleInjectConstructorsException, NoConstructorFoundException, InvocationTargetException, IllegalAccessException {
         Boolean found = false;
         Class c = search_domain;
         Method providing_method = null;
@@ -160,8 +156,9 @@ public class Injector {
             Set<Method> provides_anno_methods = Arrays.stream(c.getDeclaredMethods())
                     .filter(m -> m.isAnnotationPresent(Provides.class)).collect(Collectors.toSet());
 
-           List<Method> matching_methods = provides_anno_methods.stream().filter(method -> method.isAnnotationPresent(id_annotation.getClass())).
-                    filter(method -> (method.getReturnType()==search_target)).collect(Collectors.toList());
+           List<Method> matching_methods = provides_anno_methods.stream()
+                   .filter(method -> method.isAnnotationPresent(id_annotation.getClass()))
+                   .filter(method -> (method.getReturnType()==search_target)).collect(Collectors.toList());
 
            if(matching_methods.size()>1||(matching_methods.size()>0&&found)) throw new MultipleAnnotationOnParameterException();
            if(matching_methods.size()==1) {
@@ -171,6 +168,9 @@ public class Injector {
 
 
         } while(c != c.getSuperclass());
+       if(found == false){
+           return injectFactory(search_target);
+       }
 
         return createFromMethod(providing_method);
 
