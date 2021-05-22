@@ -3,6 +3,7 @@ package OOP.MyTest;
 
 import OOP.Solution.Inject;
 import OOP.Solution.Inject;
+import OOP.Solution.Injector;
 import OOP.Solution.Named;
 
 import java.util.Locale;
@@ -63,6 +64,58 @@ public class Dummies {
         }
     }
 
-     public static class BadDummy extends DummyClass {
+
+
+
+     public static class MultipleCtors extends DummyClass { //Should Throw
+
+        @Inject
+        MultipleCtors(Integer p1){}
+
+         @Inject
+         MultipleCtors(Integer p1, Integer p2){}
+
+
+
     }
+
+
+    public static class NoAnnoCtors extends DummyClass { //Should Throw
+
+
+        NoAnnoCtors(Integer p1){}
+
+
+
+
+    }
+
+
+    static public class Animal  extends Injector {
+
+        String Name;
+
+
+    }
+
+    static public class Mammal extends Animal{}
+
+    static public class Primate extends Mammal{}
+
+    static public class Homo extends Primate{}
+
+    static public class Sapien extends Homo{}
+
+    static public class Erectus extends Homo{}
+
+    static public class Neanderthal extends Homo{}
+
+
+
+
+
+
+
+
+
 }
