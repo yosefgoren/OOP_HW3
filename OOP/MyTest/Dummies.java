@@ -1,7 +1,6 @@
 package OOP.MyTest;
 
 
-import  OOP.*;
 import OOP.Solution.Inject;
 import OOP.Solution.Inject;
 import OOP.Solution.Named;
@@ -9,7 +8,21 @@ import OOP.Solution.Named;
 import java.util.Locale;
 
 public class Dummies {
+    public static class MyInteger{
+        Integer x;
 
+        public MyInteger(Integer x) {
+            this.x = x;
+        }
+
+        public Integer getX() {
+            return x;
+        }
+
+        public void setX(Integer x) {
+            this.x = x;
+        }
+    }
 
     public static class DummyClass {
 
