@@ -7,7 +7,6 @@ import OOP.Provided.NoSuitableProviderFoundException;
 import OOP.Solution.Injector;
 import OOP.MyTest.Dummies;
 import OOP.Solution.Injector;
-import org.junit.jupiter.api.Assertions;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.Locale;
@@ -55,28 +54,13 @@ class InjectorTest {
         }
 
         return did_throw;
-
-
-
-
     }
+    public static boolean namedBasic() throws Exception{
+        Injector injector = new Injector();
 
-
-
-
-
-
-
-
-
-
-
-
-//    public static boolean namedBasic() throws Exception{
-//        Injector injector = new Injector();
-//
-//        injector.bindByName("Very cool name over here!", Dummies.MyInteger.class);
-//        injector.bindToInstance(Dummies.MyInteger.class, new Dummies.MyInteger(8));
-//
-//    }
+        injector.bindByName("Very cool name over here!", Dummies.MyInteger.class);
+        injector.bindToInstance(Dummies.MyInteger.class, new Dummies.MyInteger(1));
+        Dummies.Erectus gorilla_man = (Dummies.Erectus) injector.construct(Dummies.Erectus.class);
+        return gorilla_man.num_of_eyebrows == 1;
+    }
 }

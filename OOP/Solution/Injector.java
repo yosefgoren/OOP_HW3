@@ -45,7 +45,6 @@ public class Injector {
     }
 
                  /******* construct ******/
-x
     public Object construct(Class clazz) throws MultipleInjectConstructorsException, NoConstructorFoundException, InvocationTargetException, IllegalAccessException, NoSuitableProviderFoundException, MultipleAnnotationOnParameterException, InstantiationException {
 
         return constructFactory(clazz);
@@ -138,17 +137,18 @@ x
                 if(str_bindings.containsKey(name)){
                     evaluated_args[i] = constructFactory(str_bindings.get(name));
                 }
-            }
-            switch (annotations_of_arg.length) {
-                case 0:
-                    evaluated_args[i] = constructFactory(array_of_args_classes[i]);
-                    break;
-                case 1:
-                    evaluated_args[i] = getProvidedParam(target_class,
-                            array_of_args_classes[i], obj_domain, annotations_of_arg[0]);
-                    break;
-                default:
-                    throw new MultipleAnnotationOnParameterException();
+            } else {
+                switch (annotations_of_arg.length) {
+                    case 0:
+                        evaluated_args[i] = constructFactory(array_of_args_classes[i]);
+                        break;
+                    case 1:
+                        evaluated_args[i] = getProvidedParam(target_class,
+                                array_of_args_classes[i], obj_domain, annotations_of_arg[0]);
+                        break;
+                    default:
+                        throw new MultipleAnnotationOnParameterException();
+                }
             }
         }
         return evaluated_args;
