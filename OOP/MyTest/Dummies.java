@@ -29,7 +29,11 @@ public class Dummies {
         @Inject
         public void changeName(){
             name = name.toUpperCase();
-            System.out.println(name+" "+f1.toString());
+        }
+
+        @Override
+        public String toString(){
+          return name+" "+f1.toString();
         }
 
 
@@ -48,7 +52,13 @@ public class Dummies {
         }
 
         Integer f1;
+
+        @Override
+        public String toString() {
+            return f1.toString();
+        }
     }
+
 
 
 
