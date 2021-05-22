@@ -1,44 +1,39 @@
 package OOP.MyTest;
 
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import OOP.*;
+import OOP.Solution.Injector;
 
-import static org.junit.jupiter.api.Assertions.*;
+import java.util.Locale;
 
 class InjectorTest {
 
-    @BeforeEach
-    void setUp() {
+    public boolean injectBasic(){ //No params
+        Injector injector1 = new Injector();
+
+        try {
+            Dummies.DummyClass d1 = (Dummies.DummyClass) injector1.construct(Dummies.DummyClass.class);
+            if(d1.toString() == ("Dependency injection for dummies".toUpperCase()+" "+20)) return true;
+        }catch(Exception e){
+            return false;
+        }
+        return false;
     }
 
-    @AfterEach
-    void tearDown() {
-    }
-
-    @Test
-    void bind() {
-    }
-
-    @Test
-    void bindToInstance() {
-    }
-
-    @Test
-    void bindToSupplier() {
-    }
-
-    @Test
-    void bindByName() {
-    }
-
-    @Test
-    void basicConstruct() {
 
 
-    }
+
+
+
+
+
+
+
+
+
 
 
 
 
 }
+
+
