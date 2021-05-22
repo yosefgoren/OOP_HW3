@@ -48,7 +48,7 @@ public class Injector {
     }
 
                  /******* construct ******/
-
+x
     public Object construct(Class clazz) throws MultipleInjectConstructorsException, NoConstructorFoundException, InvocationTargetException, IllegalAccessException, NoSuitableProviderFoundException, MultipleAnnotationOnParameterException, InstantiationException {
 
         return constructFactory(clazz);
