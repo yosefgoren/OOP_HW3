@@ -153,6 +153,7 @@ public class Injector {
     }
 
     private Object getProvidedParam(Class<?> search_domain, Class<?> search_target,Object obj_target, Annotation id_annotation) throws MultipleAnnotationOnParameterException, MultipleInjectConstructorsException, NoConstructorFoundException, InvocationTargetException, IllegalAccessException, NoSuitableProviderFoundException, InstantiationException {
+        //Old impl: Class c = search_domain;
         Class c = this.getClass();
         Set<Method> provides_anno_methods = new TreeSet<>();
 
