@@ -132,7 +132,7 @@ public class Injector {
                 Named named_annotation = (Named) Arrays.stream(annotations_of_arg)
                         .filter(a -> a.annotationType() == Named.class)
                         .collect(Collectors.toList()).get(0);
-                String name = named_annotation.id();
+                String name = named_annotation.name();
                 if(str_bindings.containsKey(name)){
                     evaluated_args[i] = constructFactory(str_bindings.get(name));
                 }
@@ -153,7 +153,7 @@ public class Injector {
     }
 
     private Object getProvidedParam(Class<?> search_domain, Class<?> search_target,Object obj_target, Annotation id_annotation) throws MultipleAnnotationOnParameterException, MultipleInjectConstructorsException, NoConstructorFoundException, InvocationTargetException, IllegalAccessException, NoSuitableProviderFoundException, InstantiationException {
-        Class c = search_domain;
+        Class c = this.getClass();
         Set<Method> provides_anno_methods = new TreeSet<>();
 
         do {
