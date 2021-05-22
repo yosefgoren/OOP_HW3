@@ -132,7 +132,7 @@ public class Injector {
                 Named named_annotation = (Named) Arrays.stream(annotations_of_arg)
                         .filter(a -> a.annotationType() == Named.class)
                         .collect(Collectors.toList()).get(0);
-                String name = named_annotation.id();
+                String name = named_annotation.name();
                 if(str_bindings.containsKey(name)){
                     evaluated_args[i] = constructFactory(str_bindings.get(name));
                 }

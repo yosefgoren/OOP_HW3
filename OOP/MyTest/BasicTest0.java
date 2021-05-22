@@ -11,43 +11,23 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
-public class BasicTest0 {
-    static class MyInteger{
-        Integer x;
-
-        public MyInteger(Integer x) {
-            this.x = x;
-        }
-
-        public void setX(Integer x) {
-            this.x = x;
-        }
-
-        public Integer getX() {
-            return x;
-        }
-    };
-
+public class TestRunner {
     public static void main(String[] args) {
         System.out.println("starting main");
         try {
-            //basicBindToSupplierTest();
-            //basicBindToObjectTest();
+            Method[] testing_methods = InjectorTest.class.getDeclaredMethods();
 
-            Class[] cArg = new Class[0];
-            testRes(BasicTest0.class.getDeclaredMethod("basicBindToSupplierTest", cArg));
+            for(Method method : testing_methods){
+                testRes(method);
+            }
         } catch (Exception e) {
             System.out.println(e.toString());
         }
-        //Method m1 = BasicTest0.class.getDeclaredMethod("basicBindToSupplierTest");
-
     }
 
     private static void testRes(Method test_method) throws InvocationTargetException, IllegalAccessException {
         String msg = test_method.getName() + ": ";
-        Class[] params = new Class[1];
-        params[0] = Integer.class;
-            if((boolean)test_method.invoke(null, params)){
+            if((boolean)test_method.invoke(null)){
                 msg += "SUCCESS";
             } else {
                 msg += "FAIL";
