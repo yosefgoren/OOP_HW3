@@ -28,10 +28,7 @@ public class Dummies {
 
         @Inject
         DummyField1 f1;
-
-
         String name;
-
 
         @Inject
         public DummyClass(){
@@ -48,13 +45,7 @@ public class Dummies {
         public String toString(){
           return name+" "+f1.toString();
         }
-
-
-
-
-
     }
-
 
     public static class DummyField1{
 
@@ -72,12 +63,6 @@ public class Dummies {
         }
     }
 
-
-
-
      public static class BadDummy extends DummyClass {
-
     }
-
-
 }

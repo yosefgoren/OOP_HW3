@@ -6,10 +6,7 @@ import OOP.Provided.MultipleInjectConstructorsException;
 import OOP.Provided.NoConstructorFoundException;
 
 import java.lang.annotation.Annotation;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
+import java.lang.reflect.*;
 import java.util.*;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -73,7 +70,7 @@ public class Injector {
         }
         if(inject_anno_ctors.size() == 1){
             Constructor c = inject_anno_ctors.get(0);
-            boolean is_accessible = c.canAccess(this);
+            boolean is_accessible = c.canAccess(null);
             c.setAccessible(true);
             reqo = createFromConstructor(c);
             c.setAccessible(is_accessible);
@@ -85,7 +82,7 @@ public class Injector {
             } catch (Exception e) {
                 throw new NoConstructorFoundException();
             }
-            boolean is_accessible = default_ctor.canAccess(this);
+            boolean is_accessible = default_ctor.canAccess(null);
             default_ctor.setAccessible(true);
             reqo = default_ctor.newInstance();;
             default_ctor.setAccessible(is_accessible);
@@ -96,7 +93,7 @@ public class Injector {
                 .filter(m -> m.isAnnotationPresent(Inject.class))
                 .collect(Collectors.toSet());
         for(Method m : inject_anno_methods){
-            boolean is_accessible = m.canAccess(this);
+            boolean is_accessible = m.canAccess(Modifier.isStatic(m.getModifiers()) ? null : reqo);
             m.setAccessible(true);
             Object[] args = evaluateParams(m.getParameterAnnotations(), m.getParameterTypes(), reqo, reqc);
             m.invoke(reqo, args);
@@ -108,7 +105,12 @@ public class Injector {
                 .filter(f -> f.isAnnotationPresent(Inject.class))
                 .collect(Collectors.toSet());
         for(Field f : inject_anno_fields){
-            boolean is_accessible = f.canAccess(this);//?? does this code do what we expect?
+            Object access_provider_obj = null;
+            if(!Modifier.isStatic(f.getModifiers()))
+            {
+                access_provider_obj = reqo;
+            }
+            boolean is_accessible = f.canAccess(Modifier.isStatic(f.getModifiers()) ? null : reqo);
             f.setAccessible(true);
             f.set(reqo, constructFactory(f.getType()));
             f.setAccessible(is_accessible);
