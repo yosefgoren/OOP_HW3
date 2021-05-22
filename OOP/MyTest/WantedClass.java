@@ -1,6 +1,6 @@
 package OOP.MyTest;
 
-import OOP.Solution.*
+import OOP.Solution.*;
 
 public class WantedClass {
     static @interface MyAnnotation{};
