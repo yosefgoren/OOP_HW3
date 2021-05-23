@@ -29,10 +29,7 @@ public class Dummies {
 
         @Inject
         DummyField1 f1;
-
-
         String name;
-
 
         @Inject
         public DummyClass(){
@@ -49,13 +46,7 @@ public class Dummies {
         public String toString(){
           return name+" "+f1.toString();
         }
-
-
-
-
-
     }
-
 
     public static class DummyField1{
 
@@ -95,8 +86,6 @@ public class Dummies {
         NoAnnoCtors(Integer p1){}
 
 
-
-
     }
 
 
@@ -111,11 +100,18 @@ public class Dummies {
 
     static public class Primate extends Mammal{}
 
-    static public class Homo extends Primate{}
+    static public class Homo extends Primate{
+        Integer num_of_eyebrows;
+    }
 
     static public class Sapien extends Homo{}
 
-    static public class Erectus extends Homo{}
+    static public class Erectus extends Homo {
+        @Inject
+        public Erectus(@Named(name="Very cool name over here!") MyInteger num_of_eyebrows){
+            this.num_of_eyebrows = num_of_eyebrows.getX();
+        }
+    }
 
     static public class Neanderthal extends Homo{}
 

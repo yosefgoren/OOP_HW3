@@ -19,10 +19,14 @@ public class TestRunner {
                     .filter(m -> m.canAccess(null)).collect(Collectors.toList());
 
             for(Method method : testing_methods){
-                testRes(method);
+                try {
+                    testRes(method);
+                } catch (Exception e){
+                    System.out.println(method.getName()+": FAIL - unexpected exception raised: "+e.toString());
+                }
             }
         } catch (Exception e) {
-            System.out.println(e.toString());
+            System.out.println("Unexpected Exception in TestRunner: "+e.toString());
         }
     }
 
