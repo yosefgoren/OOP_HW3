@@ -142,6 +142,8 @@ class InjectorTest {
 
     }
 
+   // public static  boolean ProvidesAdvanced() throws  Exception{}
+
 
 
 

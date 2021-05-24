@@ -204,9 +204,21 @@ public class Dummies {
     }
 
 
+    static public class MatchingProvider {
+
+        Integer Mass;
 
 
+        @Inject
+        private MatchingProvider(@Height Integer mass) { //BadInj1 Should throw
+            this.Mass = mass;
+        }
     }
+
+
+
+
+}
 
 
 
