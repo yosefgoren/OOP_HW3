@@ -1,12 +1,30 @@
 package OOP.MyTest;
 
 
+import OOP.Solution.*;
 import OOP.Solution.Inject;
-import OOP.Solution.Inject;
-import OOP.Solution.Injector;
-import OOP.Solution.Named;
 
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 import java.util.Locale;
+
+@Retention(RetentionPolicy.RUNTIME)
+@Target({ElementType.PARAMETER, ElementType.METHOD})
+@interface Weight{}
+
+
+@Retention(RetentionPolicy.RUNTIME)
+@Target({ElementType.PARAMETER, ElementType.METHOD})
+@interface Height{}
+
+
+@Retention(RetentionPolicy.RUNTIME)
+@Target({ElementType.PARAMETER, ElementType.METHOD})
+@interface Lifespan{}
+
+
 
 public class Dummies {
     public static class MyInteger{
@@ -43,8 +61,8 @@ public class Dummies {
         }
 
         @Override
-        public String toString(){
-          return name+" "+f1.toString();
+        public String toString() {
+            return name;
         }
     }
 
@@ -89,31 +107,106 @@ public class Dummies {
     }
 
 
-    static public class Animal  extends Injector {
+    static public class Animal {
 
-        String Name;
+        Integer Mass;
+
+        @Inject
+        private Animal(@Weight Integer mass){
+            this.Mass = mass;
+        }
+
+
+
 
 
     }
 
-    static public class Mammal extends Animal{}
+    static public class Mammal extends Animal{
+        private Mammal(Integer mass) {
+            super(mass);
+        }
+    }
 
-    static public class Primate extends Mammal{}
+    static public class Primate extends Mammal{
+        private Primate(Integer mass) {
+            super(mass);
+        }
+    }
 
     static public class Homo extends Primate{
         Integer num_of_eyebrows;
+
+        private Homo(Integer mass) {
+            super(mass);
+        }
     }
 
-    static public class Sapien extends Homo{}
+    static public class Sapien extends Homo{
+        private Sapien(Integer mass) {
+            super(mass);
+        }
+    }
 
     static public class Erectus extends Homo {
         @Inject
-        public Erectus(@Named(name="Very cool name over here!") MyInteger num_of_eyebrows){
+        public Erectus(@Named(name="Very cool name over here!") MyInteger num_of_eyebrows ,@Weight Integer mass){
+            super(mass);
             this.num_of_eyebrows = num_of_eyebrows.getX();
         }
     }
 
-    static public class Neanderthal extends Homo{}
+    static public class Neanderthal extends Homo{
+        @Inject
+        private Neanderthal(Integer mass) {
+
+
+
+            super(mass);
+        }
+    }
+
+
+    static public class badParams {
+
+        Integer Mass;
+
+
+        @Inject
+        private badParams(@Weight @Height Integer mass) { //should throw
+            this.Mass = mass;
+        }
+
+    }
+
+
+        static public class DupProviders {
+
+            Integer Mass;
+
+
+            @Inject
+            private DupProviders(@Weight Integer mass) { //BadInj1 Should throw
+                this.Mass = mass;
+            }
+        }
+
+
+    static public class NoMatchingProvider {
+
+        Integer Mass;
+
+
+        @Inject
+        private NoMatchingProvider(@Height Integer mass) { //BadInj1 Should throw
+            this.Mass = mass;
+        }
+    }
+
+
+
+
+    }
 
 
 
@@ -121,6 +214,3 @@ public class Dummies {
 
 
 
-
-
-}

@@ -23,12 +23,14 @@ public class TestRunner {
                     testRes(method);
                 } catch (Exception e){
                     System.out.println(method.getName()+": FAIL - unexpected exception raised: "+e.toString());
+                    e.printStackTrace();
                 }
             }
         } catch (Exception e) {
             System.out.println("Unexpected Exception in TestRunner: "+e.toString());
         }
     }
+
 
     private static void testRes(Method test_method) throws InvocationTargetException, IllegalAccessException {
         String msg = test_method.getName() + ": ";

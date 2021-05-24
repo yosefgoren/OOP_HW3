@@ -46,24 +46,30 @@ public class Injector {
 
                  /******* construct ******/
 
-    public Object construct(Class clazz) throws MultipleInjectConstructorsException, NoConstructorFoundException, InvocationTargetException, IllegalAccessException, NoSuitableProviderFoundException, MultipleAnnotationOnParameterException, InstantiationException {
+    public Object construct(Class clazz) throws MultipleInjectConstructorsException, NoConstructorFoundException, NoSuitableProviderFoundException, MultipleAnnotationOnParameterException, MultipleProvidersException{
 
-        return constructFactory(clazz);
+        try {
+            return constructFactory(clazz);
+        }catch(InvocationTargetException | IllegalAccessException | InstantiationException e){
+            System.out.println("Something Bad happened"+e.toString());
+            e.getStackTrace();
+        }
+        return null;
     }
 
 
                  /******* Factories ******/
-    Object constructFactory(Class<?> reqc) throws MultipleInjectConstructorsException, NoConstructorFoundException, InvocationTargetException, IllegalAccessException, NoSuitableProviderFoundException, MultipleAnnotationOnParameterException, InstantiationException {
+    Object constructFactory(Class<?> reqc) throws MultipleInjectConstructorsException, NoConstructorFoundException, InvocationTargetException, IllegalAccessException, NoSuitableProviderFoundException, MultipleAnnotationOnParameterException, InstantiationException, MultipleProvidersException {
         if(class_bindings.containsKey(reqc)) {
             return class_bindings.get(reqc).getObject();
         }
         else return injectFactory(reqc);
     }
 
-    private Object injectFactory(Class<?> reqc) throws MultipleInjectConstructorsException, NoConstructorFoundException, InvocationTargetException, IllegalAccessException, NoSuitableProviderFoundException, MultipleAnnotationOnParameterException, InstantiationException {
+    private Object injectFactory(Class<?> reqc) throws MultipleInjectConstructorsException, NoConstructorFoundException, InvocationTargetException, IllegalAccessException, NoSuitableProviderFoundException, MultipleAnnotationOnParameterException, InstantiationException, MultipleProvidersException {
         //1. initialy get the requested object:
         Object reqo;
-        List<Constructor> inject_anno_ctors = Arrays.stream(reqc.getDeclaredConstructors())
+         List<Constructor> inject_anno_ctors = Arrays.stream(reqc.getDeclaredConstructors())
                 .filter(c -> c.isAnnotationPresent(Inject.class)).collect(Collectors.toList());
         if(inject_anno_ctors.size() > 1){
             throw new MultipleInjectConstructorsException();
@@ -84,11 +90,11 @@ public class Injector {
             }
             boolean is_accessible = default_ctor.canAccess(null);
             default_ctor.setAccessible(true);
-            reqo = default_ctor.newInstance();;
+            reqo = default_ctor.newInstance();
             default_ctor.setAccessible(is_accessible);
         }
 
-        //2. apply the @inject annotated mathods to the object:
+        //2. apply the @inject annotated methods to the object:
         Set<Method> inject_anno_methods = Arrays.stream(reqc.getDeclaredMethods())
                 .filter(m -> m.isAnnotationPresent(Inject.class))
                 .collect(Collectors.toSet());
@@ -120,7 +126,7 @@ public class Injector {
         return reqo;
     }
 
-    private Object[] evaluateParams(Annotation[][] annotations, Class<?>[] array_of_args_classes, Object obj_domain, Class<?> target_class) throws MultipleInjectConstructorsException, NoConstructorFoundException, InvocationTargetException, IllegalAccessException, MultipleAnnotationOnParameterException, NoSuitableProviderFoundException, InstantiationException {
+    private Object[] evaluateParams(Annotation[][] annotations, Class<?>[] array_of_args_classes, Object obj_domain, Class<?> target_class) throws MultipleInjectConstructorsException, NoConstructorFoundException, InvocationTargetException, IllegalAccessException, MultipleAnnotationOnParameterException, NoSuitableProviderFoundException, InstantiationException, MultipleProvidersException {
         //Annotation[][] annotations = m.getParameterAnnotations();
         //Class<?>[] array_of_args_classes = m.getParameterTypes();
         Object[] evaluated_args = new Object[array_of_args_classes.length];
@@ -155,19 +161,20 @@ public class Injector {
         return evaluated_args;
     }
 
-    private Object getProvidedParam(Class<?> search_domain, Class<?> search_target,Object obj_target, Annotation id_annotation) throws MultipleAnnotationOnParameterException, MultipleInjectConstructorsException, NoConstructorFoundException, InvocationTargetException, IllegalAccessException, NoSuitableProviderFoundException, InstantiationException {
+    private Object getProvidedParam(Class<?> search_domain, Class<?> search_target,Object obj_target, Annotation id_annotation) throws MultipleAnnotationOnParameterException, MultipleInjectConstructorsException, NoConstructorFoundException, InvocationTargetException, IllegalAccessException, NoSuitableProviderFoundException, InstantiationException, MultipleProvidersException {
         //Old impl: Class c = search_domain;
         Class c = this.getClass();
-        Set<Method> provides_anno_methods = new TreeSet<>();
+        List<Method> provides_anno_methods = new ArrayList<>();
+
 
         do {
             provides_anno_methods.addAll(Arrays.stream(c.getDeclaredMethods())
-                    .filter(m -> m.isAnnotationPresent(Provides.class))
-                    .filter(m -> m.isAnnotationPresent(id_annotation.getClass()))
-                    .collect(Collectors.toSet()));
+                    .filter(m -> (m.isAnnotationPresent(Provides.class) && m.isAnnotationPresent(id_annotation.annotationType())))
+                    .collect(Collectors.toList()));
+
 
             c = c.getSuperclass();
-        }while (c!=c.getSuperclass());
+        }while (c!=null);
 
         if(provides_anno_methods.size()==0)
             return injectFactory(search_target);
@@ -185,16 +192,22 @@ public class Injector {
                 return createFromMethod(matching_methods.get(0), obj_target);
 
             default:
-                throw new MultipleAnnotationOnParameterException();
+                throw new MultipleProvidersException();
         }
     }
 
-    private Object createFromMethod(Method m, Object o) throws MultipleInjectConstructorsException, NoSuitableProviderFoundException, NoConstructorFoundException, InvocationTargetException, MultipleAnnotationOnParameterException, IllegalAccessException, InstantiationException {
-        Object[] args_list = evaluateParams(m.getParameterAnnotations(), m.getParameterTypes(), o, m.getDeclaringClass());
-        return m.invoke(o, args_list);
+    private Object createFromMethod(Method m, Object o) throws MultipleInjectConstructorsException, NoSuitableProviderFoundException, NoConstructorFoundException, InvocationTargetException, MultipleAnnotationOnParameterException, IllegalAccessException, InstantiationException, MultipleProvidersException {
+
+
+        m.setAccessible(true);
+           Object[] args_list = evaluateParams(m.getParameterAnnotations(), m.getParameterTypes(), o, m.getDeclaringClass());
+           return m.invoke(this, args_list);
+
+
+     //   return created_obj;
     }
 
-    private Object createFromConstructor(Constructor c) throws MultipleInjectConstructorsException, NoSuitableProviderFoundException, NoConstructorFoundException, InvocationTargetException, MultipleAnnotationOnParameterException, IllegalAccessException, InstantiationException {
+    private Object createFromConstructor(Constructor c) throws MultipleInjectConstructorsException, NoSuitableProviderFoundException, NoConstructorFoundException, InvocationTargetException, MultipleAnnotationOnParameterException, IllegalAccessException, InstantiationException, MultipleProvidersException {
         Object[] args_list = evaluateParams(c.getParameterAnnotations(), c.getParameterTypes(), null, c.getDeclaringClass());
         return c.newInstance(args_list);
     }
