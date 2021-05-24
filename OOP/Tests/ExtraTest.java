@@ -9,6 +9,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 
 
@@ -51,7 +52,7 @@ public class ExtraTest {
         String size;
         String colour;
         @Inject
-        public envelope(@Named(name = "normal") String size, @Colour String colour) {
+        public envelope(@Named( "normal") String size, @Colour String colour) {
             this.size = size;
             this.colour = colour;
         }
@@ -68,6 +69,11 @@ public class ExtraTest {
 
         public Person(String name) {
             this.name = name;
+        }
+
+        @Override
+        public String toString() {
+            return name;
         }
     }
 
@@ -151,7 +157,7 @@ public class ExtraTest {
         Person reciever;
         String message;
         @Inject
-        public Letter(@Envelope envelope pack,@Stamp String stamp,@Address String address,@Named(name="To whom it may concern") Person reciever,@Message String message) {
+        public Letter(@Envelope envelope pack,@Stamp String stamp,@Address String address,@Named("To whom it may concern") Person reciever,@Message String message) {
             this.pack = pack;
             this.stamp = stamp;
             this.address = address;
@@ -173,14 +179,14 @@ public class ExtraTest {
     public void AdvancedTest_1(){ //Tests a mix of named, provides and Inject
         DerivedInjector inj = new DerivedInjector();
 
-        Reciever daniel = new Reciever("Yosef");
+        Reciever recv = new Reciever("Yosef");
 
         try {
             inj.bindByName("normal",String.class);
             inj.bindToInstance(String.class,"A4");
             inj.bindByName("To whom it may concern", Reciever.class);
             inj.bind(Person.class,Reciever.class);
-            inj.bindToInstance(Reciever.class,daniel);
+            inj.bindToInstance(Reciever.class,recv);
 
        Letter l  =  (Letter) inj.construct(Letter.class);
             assertEquals(l.toString(),
@@ -194,29 +200,78 @@ public class ExtraTest {
 
     }
 
+    public static class Car{
+
+        private String colour;
+        private Integer max_speed;
+        private String model;
+
+
+        private Car(){
+            this.colour = "Red";
+            this.max_speed = 50;
+            this.model = "honda ";
+        }
+
+
+
+        @Inject
+        private Person driver;
+
+
+
+        @Inject
+        private void UpgradeSpeed(){
+            this.max_speed +=100;
+        }
+        @Inject
+        private void PaintJob(){
+            this.colour = "Yellow";
+        }
+
+        @Inject
+        private void ImproveModel(){
+           this.model = "Lamborghini";
+        }
+
+
+        @Override
+        public String toString() {
+            return "Car: " + '\n' +
+                    "colour: " + colour + '\n' +
+                    "max_speed: " + max_speed + '\n' +
+                    "model: " + model + '\n' +
+                    "driver: " + driver ;
+        }
+    }
+
+
+
 
     @Test
-    public void Advance(){ //Tests a mix of named, provides and Inject
-        DerivedInjector inj = new DerivedInjector();
+    public void default_injector(){ //Tests a mix of named, provides and Inject
+        try{
 
-        Reciever daniel = new Reciever("Yosef");
 
-        try {
-            inj.bindByName("normal",String.class);
-            inj.bindToInstance(String.class,"A4");
-            inj.bindByName("To whom it may concern", Reciever.class);
-            inj.bind(Person.class,Reciever.class);
-            inj.bindToInstance(Reciever.class,daniel);
 
-            Letter l  =  (Letter) inj.construct(Letter.class);
-            assertEquals(l.toString(),
-                    "Letter:  pack: size: A4' colour: White\n" +
-                            " stamp: Very fancy Stamp\n" +
-                            " address: Ulmann 703\n" +
-                            " reciever: Yosef\n" +
-                            " message: Deep and profound message");
 
-        }catch(Exception e) {}
+            Person yosef =new Person("Yosef");
+            Injector inj = new DerivedInjector();
+            inj.bindToInstance(Person.class,yosef);
+           Car my_car = (Car) inj.construct(Car.class);
+
+
+        assertEquals(my_car.toString(),
+                "Car: \n" +
+                "colour: Yellow\n" +
+                "max_speed: 150\n" +
+                "model: Lamborghini\n" +
+                "driver: Yosef");
+
+
+
+        }catch(Exception e){}
+
 
     }
 

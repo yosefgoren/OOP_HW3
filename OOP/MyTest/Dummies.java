@@ -150,7 +150,7 @@ public class Dummies {
 
     static public class Erectus extends Homo {
         @Inject
-        public Erectus(@Named(name="Very cool name over here!") MyInteger num_of_eyebrows ,@Weight Integer mass){
+        public Erectus(@Named("Very cool name over here!") MyInteger num_of_eyebrows ,@Weight Integer mass){
             super(mass);
             this.num_of_eyebrows = num_of_eyebrows.getX();
         }
