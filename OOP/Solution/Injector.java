@@ -22,9 +22,11 @@ public class Injector {
     public void bind(Class clazz1 , Class clazz2) throws IllegalBindException{
 
         if(!clazz1.isAssignableFrom(clazz2)) throw new IllegalBindException();
-
-       class_bindings.put(clazz1, new InstanceClassType(this,clazz2));
-
+        if(clazz1 == clazz2) {
+            class_bindings.remove(clazz1);
+        }else {
+            class_bindings.put(clazz1, new InstanceClassType(this, clazz2));
+        }
     }
 
     public void bindToInstance(Class clazz, Object obj) throws IllegalBindException {
@@ -51,8 +53,7 @@ public class Injector {
         try {
             return constructFactory(clazz);
         }catch(InvocationTargetException | IllegalAccessException | InstantiationException e){
-            System.out.println("Something Bad happened"+e.toString());
-            e.getStackTrace();
+
         }
         return null;
     }

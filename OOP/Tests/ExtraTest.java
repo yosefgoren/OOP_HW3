@@ -10,6 +10,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 
@@ -40,11 +41,13 @@ public class ExtraTest {
 
     @Retention(RetentionPolicy.RUNTIME)
     @Target({ElementType.PARAMETER, ElementType.METHOD})
-    @interface Dest{}
+    @interface Code{}
 
     @Retention(RetentionPolicy.RUNTIME)
     @Target({ElementType.PARAMETER, ElementType.METHOD})
     @interface Colour{}
+
+
 
     class envelope{
 
@@ -104,6 +107,16 @@ public class ExtraTest {
             return "Very fancy Stamp";
 
         }
+
+        @Provides
+        @Code
+        String stringCode(){
+            return "Secret Code";
+
+        }
+
+
+
 
     }
 
@@ -249,7 +262,7 @@ public class ExtraTest {
 
 
     @Test
-    public void default_injector(){ //Tests a mix of named, provides and Inject
+    public void default_injector(){ //Tests inject on default ctor, kinda basic
         try{
 
 
@@ -274,6 +287,49 @@ public class ExtraTest {
 
 
     }
+    public class CodeFetcher{
+        String code;
+
+        public CodeFetcher() {
+           this.code = "hello";
+        }
+
+        @Override
+        public String toString() {
+            return code;
+        }
+    }
+
+
+    public class Decoder {
+      private  Integer Key;
+      private String code;
+        @Inject
+        public Decoder(@Named("master") Integer key) {
+            Key = key;
+            code = "";
+        }
+        @Inject
+        public void dechyper() throws MultipleInjectConstructorsException, NoSuitableProviderFoundException, NoConstructorFoundException, MultipleProvidersException, MultipleAnnotationOnParameterException {
+            Injector inj = new DerivedInjector();
+            CodeFetcher cf = (CodeFetcher) inj.construct(CodeFetcher.class); //this should fail
+        }
+
+    }
+
+
+    @Test
+    public void TestBindingtoSelf(){
+        Injector inj = new DerivedInjector();
+        try {
+            inj.bind(CodeFetcher.class, CodeFetcher.class);
+            CodeFetcher cf = (CodeFetcher) inj.construct(CodeFetcher.class);
+            assertEquals("hello",cf.toString());
+        }catch(Exception e){}
+    }
+
+
+
 
 
 
